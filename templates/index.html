@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="container">
+      {% for track in songs %}
+        <h1>{{track.title }} </h1>
+        <p> By {{track.author}} {{track.album}}</p>
+      {% endfor %}  
+    </div>
+    
+{% endblock content %}
