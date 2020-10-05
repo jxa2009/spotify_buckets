@@ -9,9 +9,9 @@ tracks = [
 
     }
 ]
-@app.route('/')
+@app.route('/',methods=['GET','POST'])
 def index():
-    return render_template('index.html', songs = tracks)
+    return render_template('login.html', songs = tracks)
 
 
 @app.route('/login', methods=['GET','POST'])
