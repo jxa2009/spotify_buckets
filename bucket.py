@@ -4,7 +4,7 @@
 #Imports
 from authorization import *
 
-from flask import request
+
 
 #Cannot use spotipy because it is not suitable for web/desktop applications
 
@@ -15,78 +15,74 @@ client_credentials_file = "credentials.txt"
 
 #Dictionary containing the endpoints that the app may use
 endpoints = {
-    "auth" : "https://accounts.spotify.com/authorize"
+    "auth" : "https://accounts.spotify.com/authorize",
+    "token" : "https://accounts.spotify.com/api/token"
 }
 
 class sign_in:
-    def __init__(self):
-        query_params = {}
-        client_credentials = {}
 
-    def read_client_credentials(self,text_name):
-        f = open(text_name)
+    # Initialize the sign_in object with some variables it will need
+    def __init__(self):
+        self.query_params = {}
+        self.client_credentials = {}
+        self.auth_uri = ""
+
+    def setCodeChallenge(self,code_challenge):
+        self.query_params["code_challenge"] = code_challenge
+    # Take the name of a text file in the same directory as this file
+    # Return a dictionary with the client ID and Secret, shouldn't need the secret for the purpose of this app
+    def read_client_credentials(self):
+        f = open(client_credentials_file)
         client_id = f.readline()
         client_secret = f.readline()
         
-        self.client_credentials['id'] = client_id
-        self.client_credentials['secret'] = client_secret
+        self.client_credentials['id'] = client_id.rstrip()
+        self.client_credentials['secret'] = client_secret.rstrip()
 
-    def set_query_params(self,client_id, code_challenge):
+    # Set the query params object with some data that is static
+    def set_query_params(self):
         self.query_params = {
-            "client_id" : client_id,
+            "client_id" : self.client_credentials['id'],
             "response_type" :"code",
-            "redirect_uri" : "http%3A%2F%2Flocalhost%3A8000%2Flogin",
+            "redirect_uri" : "http%3A%2F%2Flocalhost%3A8000%2Fbuckets",
             # "redirect_uri" : "localhost%3A8000%2Flogin",
             "code_challenge_method" : "S256",
-            "code_challenge" :  code_challenge,
             "scope" : 'user-library-read%20playlist-modify-private%20playlist-read-private%20user-top-read%20user-library-modify%20playlist-modify-public%20playlist-read-collaborative' 
         }
         return self.query_params
 
+    # Use the query params to generate an auth uri
     def construct_auth_URI(self):
         endpoint = endpoints["auth"] + "?"
         for param in self.query_params.keys():
             endpoint += param + "=" +  self.query_params[param] + '&'
-        return endpoint[:-1]
+        self.auth_uri = endpoint
 
+    def process_sign_in(self):
+        self.read_client_credentials()
+        self.set_query_params()
+        self.construct_auth_URI()
 
-def read_client_credentials(text_name):
-    f = open(text_name)
-    client_id = f.readline()
-    client_secret = f.readline()
-    d = {}
-    d['id'] = client_id
-    d['secret'] = client_secret
-    return d
+    def getClientID(self):
+        return self.client_credentials['id']
 
-def set_query_params(client_id, code_challenge):
-    query_params = {
-        "client_id" : client_id,
-        "response_type" :"code",
-        "redirect_uri" : "http%3A%2F%2Flocalhost%3A8000%2Flogin",
-        # "redirect_uri" : "localhost%3A8000%2Flogin",
-        "code_challenge_method" : "S256",
-        "code_challenge" :  code_challenge,
-        "scope" : 'user-library-read%20playlist-modify-private%20playlist-read-private%20user-top-read%20user-library-modify%20playlist-modify-public%20playlist-read-collaborative' 
-    }
-
-    return query_params
-
-def construct_auth_URI(query_params):
-    endpoint = endpoints["auth"] + "?"
-    for param in query_params.keys():
-        endpoint += param + "=" +  query_params[param] + '&'
-    
-    return endpoint[:-1]
-
+    def getRedirectURI(self):
+        return self.query_params["redirect_uri"]
 def main():
-    client_credentials = read_client_credentials(client_credentials_file)
+    # client_credentials = read_client_credentials(client_credentials_file)
+
     a = auth()
     a.generate_code_challenge()
-    q_param = set_query_params(client_credentials['id'] ,a.getCodeChallenge())
+
+    # q_param = set_query_params(client_credentials['id'] ,a.getCodeChallenge())
     
-    auth_uri = construct_auth_URI(q_param)
-    print(auth_uri)
+    # auth_uri = construct_auth_URI(q_param)
+                                                                                                                                                                          
+    si = sign_in(a.getCodeChallenge())
+    si.read_client_credentials(client_credentials_file)
+    si.set_query_params()
+    si.construct_auth_URI()
+    print(si.auth_uri)
 
 
 if __name__ == '__main__':
